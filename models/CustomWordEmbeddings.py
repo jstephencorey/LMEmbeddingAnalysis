@@ -60,6 +60,7 @@ class CustomWordEmbeddings(nn.Module):
             self.emb_layer = nn.Embedding(num_embeddings, embedding_size, dtype=torch.bfloat16)
             embedding_weights = torch.cat((embedding_weights, temp_random_array[:,embeddings_dimension:]), dim=1)
             self.emb_layer.load_state_dict({'weight': embedding_weights})
+            print("PADDING WEIGHTS, WITH SIZE OF ", embedding_weights.size())
         self.emb_layer.weight.requires_grad = self.update_embeddings
 
     def generate_xavier_weights(self, dimensions):
