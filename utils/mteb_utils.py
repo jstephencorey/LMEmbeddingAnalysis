@@ -12,8 +12,6 @@ def mteb_meta(results_folder, output_folder):
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
-
-    # results_folder = sys.argv[1].rstrip("/")
     model_name = results_folder.split("/")[-1]
 
     all_results = {}
@@ -41,7 +39,6 @@ def mteb_meta(results_folder, output_folder):
     RES = "  results:"
 
     META_STRING = "\n".join([MARKER, TAGS, MTEB_TAG, HEADER, MODEL, RES])
-
 
     ONE_TASK = "  - task:\n      type: {}\n    dataset:\n      type: {}\n      name: {}\n      config: {}\n      split: {}\n      revision: {}\n    metrics:"
     ONE_METRIC = "    - type: {}\n      value: {}"
