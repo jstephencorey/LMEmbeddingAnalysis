@@ -7,7 +7,7 @@ import gc
 from models.CustomWordEmbeddings import CustomWordEmbeddings
 from utils.constants import HOME_DIR
 
-def get_saved_embedding(embedding_filename, device='cpu'):
+def get_saved_embedding(embedding_filename, device='cuda'): # this is hardcoded and should possibly be changed
     full_embedding = torch.load(embedding_filename, map_location=torch.device(device))
     weights = full_embedding.weight.data
 
@@ -30,21 +30,18 @@ def clear_cuda_memory(obj):
 def get_model(name,
               embedding_type: str="full",
               pooling_mode: str="mean",
-              tokenizer: str='bigscience/tokenizer',
+              tokenizer_name: str='bigscience/tokenizer',
               embedding_size: tuple=None,
               save_model: bool=False):
-    # tokenizer = GPTNeoXTokenizerFast.from_pretrained("EleutherAI/gpt-neox-20b")
-    # tokenizer = GPT2TokenizerFast.from_pretrained("facebook/opt-125m")
     if embedding_size is None:
-        embedding_weight = get_saved_embedding(embedding_filename=f"../embeddings/{name}.pth").weight
+        embedding_weight = get_saved_embedding(embedding_filename=f"{HOME_DIR}/embeddings/{name}.pth").weight
     else:
         vocab_side = embedding_size[0]
         d_model = embedding_size[1]
-        # print(vocab_side,d_model)
         embedding_layer = torch.nn.Embedding(vocab_side, d_model)
         embedding_weight = embedding_layer.weight
 
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     word_embedding_model = CustomWordEmbeddings(tokenizer, 
                                                 embedding_weight,
                                                 embedding_type=embedding_type,
