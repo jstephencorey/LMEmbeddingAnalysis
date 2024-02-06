@@ -3,6 +3,10 @@ from mteb import MTEB
 import json
 import os
 
+import time
+
+from utils.constants import BATCH_SIZE
+
 # Basically pulled from mteb, but turned into a function to make it easier to use for my needs
 def mteb_meta(results_folder, output_folder):
     logging.basicConfig(level=logging.INFO)
@@ -97,4 +101,115 @@ def mteb_meta(results_folder, output_folder):
     with open(output_filename, "w") as f:
         f.write(META_STRING)
 
-mteb_meta("/mnt/f/Dev/LM Analysis/mteb/pythia-14m_full_mean/", "/mnt/f/Dev/LM Analysis/mteb/pythia-14m_full_mean/")
+
+TASK_LIST_CLASSIFICATION = [
+    # "AmazonCounterfactualClassification",
+    # "AmazonPolarityClassification",
+    # "AmazonReviewsClassification",
+    # "Banking77Classification",
+    # "EmotionClassification",
+    # "ImdbClassification",
+    # "MassiveIntentClassification",
+    # "MassiveScenarioClassification",
+    # "MTOPDomainClassification",
+    # "MTOPIntentClassification",
+    # "ToxicConversationsClassification",
+    # "TweetSentimentExtractionClassification",
+]
+
+TASK_LIST_CLUSTERING = [
+    # "ArxivClusteringP2P",
+    # "ArxivClusteringS2S",
+    # "BiorxivClusteringP2P",
+    # "BiorxivClusteringS2S",
+    # "MedrxivClusteringP2P",
+    # "MedrxivClusteringS2S",
+    # "RedditClustering",
+    # "RedditClusteringP2P",
+    # "StackExchangeClustering",
+    # "StackExchangeClusteringP2P",
+    # "TwentyNewsgroupsClustering",
+]
+
+TASK_LIST_PAIR_CLASSIFICATION = [
+    # "SprintDuplicateQuestions",
+    # "TwitterSemEval2015",
+    # "TwitterURLCorpus",
+]
+
+TASK_LIST_RERANKING = [
+    # "AskUbuntuDupQuestions",
+    # "MindSmallReranking",
+    # "SciDocsRR",
+    # "StackOverflowDupQuestions",
+]
+
+TASK_LIST_RETRIEVAL = [
+    # "ArguAna",
+    # "ClimateFEVER",
+    # "CQADupstackAndroidRetrieval",
+    # "CQADupstackEnglishRetrieval",
+    # "CQADupstackGamingRetrieval",
+    # "CQADupstackGisRetrieval",
+    # "CQADupstackMathematicaRetrieval",
+    # "CQADupstackPhysicsRetrieval",
+    # "CQADupstackProgrammersRetrieval",
+    # "CQADupstackStatsRetrieval",
+    # "CQADupstackTexRetrieval",
+    # "CQADupstackUnixRetrieval",
+    # "CQADupstackWebmastersRetrieval",
+    # "CQADupstackWordpressRetrieval",
+    # "DBPedia",
+    # "FEVER",
+    # "FiQA2018",
+    # "HotpotQA",
+    # "MSMARCO",
+    # "NFCorpus",
+    # "NQ",
+    # "QuoraRetrieval",
+    "SCIDOCS",
+    # "SciFact",
+    # "Touche2020",
+    # "TRECCOVID",
+]
+
+TASK_LIST_STS = [
+    # "BIOSSES",
+    # "SICK-R",
+    # "STS12",
+    # "STS13",
+    # "STS14",
+    # "STS15",
+    # "STS16",
+    # "STS17",
+    # "STS22",
+    # "STSBenchmark",
+    # "SummEval",
+]
+
+
+TASK_LIST = (
+    TASK_LIST_CLASSIFICATION
+    + TASK_LIST_CLUSTERING
+    + TASK_LIST_PAIR_CLASSIFICATION
+    + TASK_LIST_RERANKING
+    + TASK_LIST_RETRIEVAL
+    + TASK_LIST_STS
+)
+
+def test_all_mteb(model, output_folder, verbosity=0):  
+    beginning_start = time.time()
+    with open('./mteb/times.txt', 'a') as times:
+        times.write('\n')
+        times.write(output_folder)
+        times.write('\n\n')
+    for task in TASK_LIST:
+        start_time = time.time()
+        print(f"Running task: {task}")
+        eval_splits = ["dev"] if task == "MSMARCO" else ["test"]
+        evaluation = MTEB(tasks=[task])
+        evaluation.run(model, output_folder=output_folder, verbosity=verbosity, eval_splits=eval_splits, batch_size=BATCH_SIZE)
+        with open('./mteb/times.txt', 'a') as times:
+            times.write(f"{task}: {time.time() - start_time}\n")
+    with open('./mteb/times.txt', 'a') as times:
+            times.write(f"Total time: {time.time() - beginning_start}\n")

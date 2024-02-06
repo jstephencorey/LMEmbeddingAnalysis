@@ -5,6 +5,7 @@ import os
 import gc
 
 from models.CustomWordEmbeddings import CustomWordEmbeddings
+from utils.constants import HOME_DIR
 
 def get_saved_embedding(embedding_filename, device='cpu'):
     full_embedding = torch.load(embedding_filename, map_location=torch.device(device))
@@ -34,7 +35,7 @@ def get_model(name,
     # tokenizer = GPTNeoXTokenizerFast.from_pretrained("EleutherAI/gpt-neox-20b")
     # tokenizer = GPT2TokenizerFast.from_pretrained("facebook/opt-125m")
     if embedding_size is None:
-        embedding_weight = get_saved_embedding(embedding_filename=f"./embeddings/{name}_main.pth").weight
+        embedding_weight = get_saved_embedding(embedding_filename=f"../embeddings/{name}.pth").weight
     else:
         vocab_side = embedding_size[0]
         d_model = embedding_size[1]
@@ -47,16 +48,13 @@ def get_model(name,
                                                 embedding_weight,
                                                 embedding_type=embedding_type,
                                                 max_seq_length=2048)
-    output_folder = f"/mnt/f/Dev/LM Analysis/mteb/{name}_{embedding_type}_{pooling_mode}/"
+    output_folder = f"{HOME_DIR}/mteb_analyses/{name}_{embedding_type}_{pooling_mode}/"
     make_dir_if_none(output_folder)
     model_folder = f"{output_folder}model/"
     make_dir_if_none(model_folder)
     word_embedding_model.save(model_folder)
     word_embedding_model = CustomWordEmbeddings.load(model_folder)
-    # tokenizer_embedder = TokenizerEmbedder(tokenizer=tokenizer, embedding=word_embedding_model)
     pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension(), pooling_mode=pooling_mode)
     model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
-    # word_embedding_model.tokenizer
-    # print("Example embedding subset:", model.encode(["Hi, I'm Joseph", "What's your name, hombre?", "Potato Chips"])[0][0:10])
     
     return model, output_folder
