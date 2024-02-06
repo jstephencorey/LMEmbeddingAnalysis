@@ -31,7 +31,8 @@ def get_model(name,
               embedding_type: str="full",
               pooling_mode: str="mean",
               tokenizer: str='bigscience/tokenizer',
-              embedding_size: tuple=None):
+              embedding_size: tuple=None,
+              save_model: bool=False):
     # tokenizer = GPTNeoXTokenizerFast.from_pretrained("EleutherAI/gpt-neox-20b")
     # tokenizer = GPT2TokenizerFast.from_pretrained("facebook/opt-125m")
     if embedding_size is None:
@@ -50,10 +51,11 @@ def get_model(name,
                                                 max_seq_length=2048)
     output_folder = f"{HOME_DIR}/mteb_analyses/{name}_{embedding_type}_{pooling_mode}/"
     make_dir_if_none(output_folder)
-    model_folder = f"{output_folder}model/"
-    make_dir_if_none(model_folder)
-    word_embedding_model.save(model_folder)
-    word_embedding_model = CustomWordEmbeddings.load(model_folder)
+    if save_model:
+        model_folder = f"{output_folder}model/"
+        make_dir_if_none(model_folder)
+        word_embedding_model.save(model_folder)
+        word_embedding_model = CustomWordEmbeddings.load(model_folder)
     pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension(), pooling_mode=pooling_mode)
     model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
     
