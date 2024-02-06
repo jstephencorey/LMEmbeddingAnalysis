@@ -3,6 +3,7 @@ from mteb import MTEB
 import json
 import os
 
+# Basically pulled from mteb, but turned into a function to make it easier to use for my needs
 def mteb_meta(results_folder, output_folder):
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
