@@ -1,3 +1,6 @@
 */__pycache__/*
 embeddings/*.pth
 mteb_analyses/*/model/*
+
+*.json
+*.md
