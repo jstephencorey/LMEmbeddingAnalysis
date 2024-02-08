@@ -4,3 +4,5 @@ mteb_analyses/*/model/*
 
 *.json
 *.md
+
+!Embeddings Blog.md
