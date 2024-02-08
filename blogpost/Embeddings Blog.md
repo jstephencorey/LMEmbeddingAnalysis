@@ -135,7 +135,7 @@ Pythia is one of the more interesting suites because of how open it is,
 including a release of many checkpoints throughout training. Below is a
 graph of the following ablations:
 
-![](media/image2.png)
+![](media/image3.png)
 
 1.  > **Original Embedding Weights**: Take the embeddings as they are
     > from the models, unchanged and just how the first layer of the LM
@@ -253,21 +253,85 @@ that went into the graphs in this analysis.
 Considered next to each other, the models form an interesting
 comparison.
 
-### ![](media/image3.png)
+### ![](media/image2.png)
 
-This combined analysis shows that the various model suites have somewhat
-different characteristics, even if they have similar patterns. Notably,
-the various suites improve embedding quality with size up to a point,
-then plateau or decrease in score. The one exception to this is
-Cerebras, though the similarity to OPT suggests it likely would plateau
-soon if the suite kept increasing. This peak occurs at different sizes
-in different model suites. Notably, 2048 dimensions for Pythia and
-Bloom, and 5120 dimensions for OPT. It looks as though T5 peaks/plateaus
-at roughly 1024 dimensions.
+This combined analysis shows how, despite some differences, there is a
+notable pattern that, past a certain point, embedding quality stagnates
+or regresses.
+
+The one exception to this is Cerebras, though given that suite’s score
+similarity to OPT, I hypothesize it would plateau soon if the suite kept
+increasing. This peak/stagnation point occurs at different sizes in
+different model suites. Namely, 1024 dimensions for T5, 2048 dimensions
+for Pythia and Bloom, and 5120 dimensions for OPT.
 
 Also notable is that the embeddings are very different quality by suite.
 OPT-66b’s embeddings (9216 dimensions) are slightly worse at embedding
 than pythia-70m’s embedding (512 dimensions).
+
+### Random baseline from the tokenizers:
+
+![](media/image4.png)
+
+Of course, model suites vary in many ways besides just model size, and
+one big change with a potentially large impact is tokenizer choice. I
+think tokenizers are understudied, and point to efforts like
+[<span class="underline">tokenmonster</span>](https://github.com/alasdairforsythe/tokenmonster)
+to rethink the way we consider tokenizing text for LLMs.
+
+Looking at how the tokenization affects the random baselines is rather
+interesting. For instance, the fact that Bloom notably improves over the
+other models makes sense when you consider that it has a vocab size
+almost 5x that of the next largest tokenizer (larger vocabularies make
+it easier to differentiate between random tokens). Of most interest to
+me, however, is that Cerebras, OPT, and Pythia have almost identical
+vocab sizes, but score somewhat differently. (I ran this for a few other
+seeds, and though the exact lines slightly vary, the graph overall looks
+the same, see the
+[<span class="underline">plots</span>](https://github.com/jstephencorey/LMEmbeddingAnalysis/tree/main/plots)
+folder for those graphs).
+
+Overall it seems like tokenizers may have some influence on embedding
+quality, though nothing to substantially effect this work’s conclusions.
+
+## Implications and Future Work
+
+One notable implication is that past a certain size, embedding quality
+seems to go down or stagnate, at least as measured by a retrieval
+benchmark.
+
+This implies one of the following (though one does not exclude the
+others):
+
+1.  > An underutilization/undertraining of the embedding space in large
+    > models. This means that if the models were trained in a way that
+    > they had better embedding spaces, the models as a whole would be
+    > more capable models.  
+    >   
+    > This holds a lot of potential for increased model performance if
+    > true. Word embeddings predate modern large language models (e.g.
+    > [<span class="underline">word2vec</span>](https://arxiv.org/abs/1301.3781)),
+    > and applying some effort to things like pre-pre-training the
+    > embeddings before or instead of pre-training it in sync with the
+    > model, or improving training through efforts like
+    > [<span class="underline">μP</span>](https://arxiv.org/abs/2304.06875).
+
+2.  > A diminishing importance of embedding space in large models. By
+    > this theory, large models are capable not “in spite of” their
+    > comparatively lackluster embeddings, but rather that beyond a
+    > certain point, the embeddings don’t play a very significant role
+    > in language processing. They act perhaps more as an extension of
+    > the token ids, a way to differentiate one token from another, and
+    > meaning is encoded more in the processing of further layers.  
+    >   
+    > This is important because it would make interpretability harder.
+    > If, in fact, much of the meaning in tokens is contained in later
+    > layers than the token embedding layer, it makes it more difficult
+    > to interpret and understand the language models.
+
+3.  > Retrieval is a poor metric for large embedding layer sizes of
+    > large language models. Further experiments on these model suites
+    > with different metrics is encouraged.
 
 There are several possible explanations for the general downhill trend
 or stagnation of models after a certain point:
@@ -332,52 +396,6 @@ or stagnation of models after a certain point:
     larger models are learning things, just not the things measured by
     the metric picked for evaluation in this blog post. Repeating these
     evaluations using other metrics is an open task for future work.
-
-## Random baseline from the tokenizers:
-
-![](media/image4.png)
-
-One potential reason for the differences between models is in the
-tokenizers. Thus it is reasonable to
-
-## Implications and Future Work
-
-One notable implication is that past a certain size, embedding quality
-seems to go down or stagnate, at least as measured by a retrieval
-benchmark.
-
-This implies one of the following (though one does not exclude the
-others):
-
-1.  > An underutilization/undertraining of the embedding space in large
-    > models. This means that if the models were trained in a way that
-    > they had better embedding spaces, the models as a whole would be
-    > more capable models.  
-    >   
-    > This holds a lot of potential for increased model performance if
-    > true. Word embeddings predate modern large language models (e.g.
-    > [<span class="underline">word2vec</span>](https://arxiv.org/abs/1301.3781)),
-    > and applying some effort to things like pre-pre-training the
-    > embeddings before or instead of pre-training it in sync with the
-    > model, or improving training through efforts like
-    > [<span class="underline">μP</span>](https://arxiv.org/abs/2304.06875).
-
-2.  > A diminishing importance of embedding space in large models. By
-    > this theory, large models are capable not “in spite of” their
-    > comparatively lackluster embeddings, but rather that beyond a
-    > certain point, the embeddings don’t play a very significant role
-    > in language processing. They act perhaps more as an extension of
-    > the token ids, a way to differentiate one token from another, and
-    > meaning is encoded more in the processing of further layers.  
-    >   
-    > This is important because it would make interpretability harder.
-    > If, in fact, much of the meaning in tokens is contained in later
-    > layers than the token embedding layer, it makes it more difficult
-    > to interpret and understand the language models.
-
-3.  > Retrieval is a poor metric for large embedding layer sizes of
-    > large language models. Further experiments on these model suites
-    > with different metrics is encouraged.
 
 ## Conclusions
 
