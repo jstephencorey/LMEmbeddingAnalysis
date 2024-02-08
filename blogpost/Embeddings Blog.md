@@ -2,14 +2,6 @@
 
 By Joseph Corey
 
-todo:
-
-  - > cut a lot of the fat
-
-  - > See if simple enough for dad to understand most of it?
-
-  - > Post again to Discord to get Stella's thoughts/approval
-
 ## Introduction
 
 LLMs have the curious distinction of being near the top of two seemingly
@@ -211,7 +203,7 @@ The padding in this model is up to 12288 dimensions, the size of the
 embeddings on the largest OPT model, opt-175b. This doesn’t affect the
 embeddings much, though, besides the smallest model.
 
-![](media/image3.png)
+![](media/image4.png)
 
 There are three main things to note here in how this analysis differs
 from the Pythia analysis.
@@ -229,11 +221,6 @@ however the smaller OPT models are trained, they seem to lose
 information that would be helpful in encoding information for retrieval.
 This could be a initialization issue, or potentially an issue with this
 particular metric.
-
-The final thing of note is that retrieval with the first 128 dimensions
-of opt-13b or opt-175b actually outperforms retrieval with all 2048
-dimensions of opt-1.3b, though all of opt's 128 dimensional chunks
-underperform the best of pythia's chunks.
 
 ### Other Model Suites
 
@@ -271,7 +258,7 @@ than pythia-70m’s embedding (512 dimensions).
 
 ### Random baseline from the tokenizers:
 
-![](media/image4.png)
+![](media/image3.png)
 
 Of course, model suites vary in many ways besides just model size, and
 one big change with a potentially large impact is tokenizer choice. I
