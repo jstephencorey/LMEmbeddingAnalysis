@@ -36,7 +36,7 @@ class CustomWordEmbeddings(nn.Module):
         embedding_weights = embedding_weights.to(dtype=torch.bfloat16)
         num_embeddings, embeddings_dimension = embedding_weights.size()
         self.embeddings_dimension = embeddings_dimension
-        print(self.embeddings_dimension, "EMBED DIM")
+        print(f"Initializing model weights for {self.embeddings_dimension} using {self.embedding_type}")
 
         if "full" in self.embedding_type:
             self.emb_layer = nn.Embedding(num_embeddings, embeddings_dimension, dtype=torch.bfloat16)
@@ -54,6 +54,7 @@ class CustomWordEmbeddings(nn.Module):
         elif "crop" in self.embedding_type:
             embedding_size = int(self.embedding_type.split('_')[-1])
             self.emb_layer = nn.Embedding(num_embeddings, embedding_size, dtype=torch.bfloat16)
+            self.emb_layer.load_state_dict({'weight': embedding_weights[:,:embedding_size]})
         elif "pad" in self.embedding_type:
             embedding_size = int(self.embedding_type.split('_')[-1])
             temp_random_array = self.generate_xavier_weights((num_embeddings, embedding_size)).to('cuda')
@@ -62,6 +63,7 @@ class CustomWordEmbeddings(nn.Module):
             self.emb_layer.load_state_dict({'weight': embedding_weights})
             print("PADDING WEIGHTS, WITH SIZE OF ", embedding_weights.size())
         self.emb_layer.weight.requires_grad = self.update_embeddings
+        print("Initialized model weights")
 
     def generate_xavier_weights(self, dimensions):
         torch.manual_seed(RANDOM_SEED)
