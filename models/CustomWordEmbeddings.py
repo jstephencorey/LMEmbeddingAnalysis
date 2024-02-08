@@ -7,7 +7,7 @@ import torch
 import json
 import os
 
-from utils.constants import MAX_EMBEDDING_SIZE
+from utils.constants import MAX_EMBEDDING_SIZE, RANDOM_SEED
 
 # Edited version of the model from MTEB
 class CustomWordEmbeddings(nn.Module):
@@ -64,7 +64,7 @@ class CustomWordEmbeddings(nn.Module):
         self.emb_layer.weight.requires_grad = self.update_embeddings
 
     def generate_xavier_weights(self, dimensions):
-        torch.manual_seed(42)
+        torch.manual_seed(RANDOM_SEED)
         weights = torch.empty(dimensions, dtype=torch.bfloat16)
         nn.init.xavier_normal_(weights)
         return weights
