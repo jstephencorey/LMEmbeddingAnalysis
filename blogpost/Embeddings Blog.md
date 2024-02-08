@@ -135,7 +135,7 @@ Pythia is one of the more interesting suites because of how open it is,
 including a release of many checkpoints throughout training. Below is a
 graph of the following ablations:
 
-![](media/image3.png)
+![](media/image2.png)
 
 1.  > **Original Embedding Weights**: Take the embeddings as they are
     > from the models, unchanged and just how the first layer of the LM
@@ -211,7 +211,7 @@ The padding in this model is up to 12288 dimensions, the size of the
 embeddings on the largest OPT model, opt-175b. This doesn’t affect the
 embeddings much, though, besides the smallest model.
 
-![](media/image1.png)
+![](media/image3.png)
 
 There are three main things to note here in how this analysis differs
 from the Pythia analysis.
@@ -253,7 +253,7 @@ that went into the graphs in this analysis.
 Considered next to each other, the models form an interesting
 comparison.
 
-### ![](media/image2.png)
+### ![](media/image1.png)
 
 This combined analysis shows how, despite some differences, there is a
 notable pattern that, past a certain point, embedding quality stagnates
@@ -296,119 +296,61 @@ quality, though nothing to substantially effect this work’s conclusions.
 
 ## Implications and Future Work
 
-One notable implication is that past a certain size, embedding quality
-seems to go down or stagnate, at least as measured by a retrieval
-benchmark.
+Embedding quality in large language models (LLMs) tends to plateau or
+decline past a certain model size, as shown in this retrieval benchmark.
+This suggests several possible implications and areas for exploration:
 
-This implies one of the following (though one does not exclude the
-others):
+1\. Large models may underuse/undertrain their token embedding layers.
+This theory is that if the models were trained in a way that they had
+better embedding spaces, the models as a whole would be more capable
+models.
 
-1.  > An underutilization/undertraining of the embedding space in large
-    > models. This means that if the models were trained in a way that
-    > they had better embedding spaces, the models as a whole would be
-    > more capable models.  
-    >   
-    > This holds a lot of potential for increased model performance if
-    > true. Word embeddings predate modern large language models (e.g.
-    > [<span class="underline">word2vec</span>](https://arxiv.org/abs/1301.3781)),
-    > and applying some effort to things like pre-pre-training the
-    > embeddings before or instead of pre-training it in sync with the
-    > model, or improving training through efforts like
-    > [<span class="underline">μP</span>](https://arxiv.org/abs/2304.06875).
+If true, this theory suggests a definite area for improvement in models
+by increasing token embedding quality. Some evidence against this theory
+is that that the embeddings usually train early on in the model, then
+stay relatively stable for the rest of pre-training (See
+[<span class="underline">this informative blog
+post</span>](https://www.lesswrong.com/posts/2JJtxitp6nqu6ffak/basic-facts-about-language-models-during-training-1#Tokenizer_Embeddings_are_rapidly_learnt_then_stabilize)
+for some more details)
 
-2.  > A diminishing importance of embedding space in large models. By
-    > this theory, large models are capable not “in spite of” their
-    > comparatively lackluster embeddings, but rather that beyond a
-    > certain point, the embeddings don’t play a very significant role
-    > in language processing. They act perhaps more as an extension of
-    > the token ids, a way to differentiate one token from another, and
-    > meaning is encoded more in the processing of further layers.  
-    >   
-    > This is important because it would make interpretability harder.
-    > If, in fact, much of the meaning in tokens is contained in later
-    > layers than the token embedding layer, it makes it more difficult
-    > to interpret and understand the language models.
+If further “more of the same” pre-training does not result in much
+embedding quality gains, perhaps other methods for improving token
+embeddings ought to be improved, for instance pre-pre-training
+embeddings or different hyperparameter choices like suggested in
+[<span class="underline">μP</span>](https://arxiv.org/abs/2304.06875).
+(Though it will be noted that Cerebras, considered in this analysis, was
+trained with
+[<span class="underline">μP</span>](https://arxiv.org/abs/2304.06875)
+hyperparameter choices).
 
-3.  > Retrieval is a poor metric for large embedding layer sizes of
-    > large language models. Further experiments on these model suites
-    > with different metrics is encouraged.
+2\. The diminished role of embeddings in larger models may mean that
+beyond a specific size, the embedding layer’s information becomes less
+significant (and a model's interpretability becomes more complex) as
+meaning is increasingly encoded in subsequent layers.
 
-There are several possible explanations for the general downhill trend
-or stagnation of models after a certain point:
+Models like
+[<span class="underline">EELBERT</span>](https://arxiv.org/abs/2310.20144)
+have shown that capable models can be trained even if the embedding
+layer is an n-gram pooling hash function, so it seems like as long as
+there is some information in the embeddings to distinguish and correlate
+between tokens, the rest of the language model is capable of
+transforming that information (pun intended) into useful next-word
+predictions or sentence embeddings.
 
-1.  The models aren’t as fully trained as they could be, and pretraining
-    on further data would improve the dimensions as well. This is at
-    least mildly supported by [<span class="underline">the original
-    Pythia paper</span>](https://arxiv.org/abs/2304.01373), which noted
-    that the models (as a whole) still were improving at the end of
-    training, and likely would have improved more with further
-    training.  
-      
-    Some evidence against that claim is that that the embeddings usually
-    train early on in the model, then stay relatively stable for the
-    rest of pretraining (See [<span class="underline">this informative
-    blog
-    post</span>](https://www.lesswrong.com/posts/2JJtxitp6nqu6ffak/basic-facts-about-language-models-during-training-1#Tokenizer_Embeddings_are_rapidly_learnt_then_stabilize).
-    My personal analysis of the Pythia models found that a large amount
-    of the changes in the embedding layers of a model happen in the
-    first \~10% of the training, and after that point, the changes to
-    the embedding layer slow down significantly.) If the embedding layer
-    is relatively set early on, and doesn’t change significantly in the
-    later parts of pretraining, then further training wouldn’t make a
-    significant difference. This is an open area for further research.
-
-2.  A similar possibility is that the hyperparameters (e.g. learning
-    rate) for pretraining the layers of large language model aren’t
-    necessarily the best hyperparameters for pretraining the embedding
-    layer. This is proposed in the
-    [<span class="underline">μP</span>](https://arxiv.org/abs/2304.06875)
-    paper, for instance.  
-      
-    However, the real life performance the Cerebras model (which was
-    trained with μP hyperparameter recommendations) would tend to
-    suggest that that alone is not enough.
-
-3.  The bigger the model, the less important the embedding layer. Models
-    like
-    [<span class="underline">EELBERT</span>](https://arxiv.org/abs/2310.20144)
-    have shown that capable models can be trained even if the embedding
-    layer is more or less a hash function (in their paper, an “n-gram
-    pooling hash function”), so it seems like as long as there is some
-    information in the embeddings to distinguish between tokens, the
-    rest of the language model is capable of transforming that
-    information (pun intended) into useful next-word predictions. As the
-    model gets bigger, it can use embeddings that are as good as or
-    worse than smaller models’ embedding layers to get comparatively
-    better results because of all of the other information stored in
-    other weights in the model.  
-      
-    For future work, it may be useful to train a model while freezing
-    the random embedding weights at initialization, and compare that
-    training to a model with unfrozen weights. This could help answer
-    how important capable trained embeddings are in a language model.
-    Especially in small models, the embeddings takes up a significant
-    percentage of the weights, so something like the hashing proposed in
-    EELBERT could be worth the tradeoffs in time and (potentially)
-    quality.
-
-4.  It’s also possible that retrieval isn’t the best metric for
-    measuring capabilities in embedding layers in models, and/or that
-    larger models are learning things, just not the things measured by
-    the metric picked for evaluation in this blog post. Repeating these
-    evaluations using other metrics is an open task for future work.
+3\. The possibility also exists that this retrieval metric may not
+comprehensively measure the efficacy of the embedding layer in large
+models. Repeating the evaluation using alternative methods remains an
+open task for further research.
 
 ## Conclusions
 
-The embedding layer of various LLM models gets more capable (as measured
-by ability to be used as embeddings in a retrieval benchmark) with size
-up to a point. This may point to the inability of small models to have
-enough embedding space to store all the information they could need, and
-the potential underuse of embedding dimensions by larger models.
-
-This requires more analysis in the future. Most especially, it may be
-worth it to explore if embeddings are underutilized, or merely less
-important in larger models. This could hold implications for how to
-pre-train large language models
+This analysis shows that the capacity of embedding layers in LLMs
+improves with the size of the model only up to a certain limit. This may
+imply limitations within smaller models and a potential underuse in
+larger ones. Future research should delve into whether embeddings are
+insufficiently utilized or if embedding layer importance diminishes as
+model size increases. These insights could influence strategies for
+architecture and pre-training of LLMs.
 
 Whatever future work shows regarding the importance of embeddings in
 large models, this work can stand as evidence that bigger is not always
