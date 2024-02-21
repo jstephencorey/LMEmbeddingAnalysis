@@ -1,7 +1,12 @@
-# How do the Embedding Layers of LLMs change with scale?
-
-By Joseph Corey
-
+---
+title: "How do the Embedding Layers of LLMs change with scale?"
+date: 2024-02-21T15:00:00-00:00
+description: "Examining the impact of scaling on LLM Emebdding Layers"
+author: ["Joseph Corey"]
+ShowToc: true
+mathjax: true
+draft: false
+---
 ## Introduction
 
 LLMs have the curious distinction of being near the top of two seemingly
@@ -94,32 +99,31 @@ All the code for this analysis can be found in
 repo</span>](https://github.com/jstephencorey/LMEmbeddingAnalysis). A
 short summary of how I analyzed the model suites:
 
-1.  > Take the token embedding layer from each model in the suite (Note
-    > that this is NOT doing any computation in the model, only taking
-    > the embedding lookup table of the model and evaluating its
-    > output).
+1.  Take the token embedding layer from each model in the suite (Note
+    that this is NOT doing any computation in the model, only taking the
+    embedding lookup table of the model and evaluating its output).
 
-2.  > Use the SentenceTransformer library to combine the model suite’s
-    > tokenizer, the embedding layer, and a mean pooling module, to
-    > result in a single embedding vector per sentence.
+2.  Use the SentenceTransformer library to combine the model suite’s
+    tokenizer, the embedding layer, and a mean pooling module, to result
+    in a single embedding vector per sentence.
 
-3.  > The model encodes sentences as a single, *d\_model* sized
-    > embedding. These embeddings are then evaluated on the SCIDOCS
-    > retrieval benchmark, using
-    > [<span class="underline">MTEB</span>](https://github.com/embeddings-benchmark/mteb)
-    > ([<span class="underline">beir</span>](https://github.com/beir-cellar/beir/tree/main)
-    > under the hood). Quality of embeddings is then measured by using
-    > [<span class="underline">Normalized Discounted Cumulative Gain
-    > (ncgd)</span>](https://en.m.wikipedia.org/wiki/Discounted_cumulative_gain).
+3.  The model encodes sentences as a single, *d\_model* sized embedding.
+    These embeddings are then evaluated on the SCIDOCS retrieval
+    benchmark, using
+    [<span class="underline">MTEB</span>](https://github.com/embeddings-benchmark/mteb)
+    ([<span class="underline">beir</span>](https://github.com/beir-cellar/beir/tree/main)
+    under the hood). Quality of embeddings is then measured by using
+    [<span class="underline">Normalized Discounted Cumulative Gain
+    (ncgd)</span>](https://en.m.wikipedia.org/wiki/Discounted_cumulative_gain).
 
-> The main thing to know is that **higher is better**. None of these
-> models are going to be competitive in embedding rankings, that’s not
-> the point. (the highest model as of this writing on the MTEB
-> leaderboard for the SCIDOCS retrieval,
-> [<span class="underline">all-mpnet-base-v2</span>](https://huggingface.co/sentence-transformers/all-mpnet-base-v2),
-> scores a 23.76, whereas the highest model in my analysis scored less
-> than 8). The goal is to compare model embedding layers with others in
-> the same suite and others in different suites using a common metric.
+The main thing to know is that **higher is better**. None of these
+models are going to be competitive in embedding rankings, that’s not the
+point. (the highest model as of this writing on the MTEB leaderboard for
+the SCIDOCS retrieval,
+[<span class="underline">all-mpnet-base-v2</span>](https://huggingface.co/sentence-transformers/all-mpnet-base-v2),
+scores a 23.76, whereas the highest model in my analysis scored less
+than 8). The goal is to compare model embedding layers with others in
+the same suite and others in different suites using a common metric.
 
 ### Pythia
 
@@ -127,11 +131,11 @@ Pythia is one of the more interesting suites because of how open it is,
 including a release of many checkpoints throughout training. Below is a
 graph of the following ablations:
 
-![](media/image2.png)
+![](media/image3.png)
 
-1.  > **Original Embedding Weights**: Take the embeddings as they are
-    > from the models, unchanged and just how the first layer of the LM
-    > would see them.
+1.  **Original Embedding Weights**: Take the embeddings as they are from
+    the models, unchanged and just how the first layer of the LM would
+    see them.
 
 The main thing that surprised me when looking at this is that the line
 doesn’t just keep going up. If you had to pick one embedding layer of a
@@ -140,37 +144,38 @@ might expect, pythia-12b. This is true in spite of the fact that
 pythia-12b is a more capable language model and has a embedding size
 twice that of pythia-1b.
 
-Especially of note is pythia-1.4b and pythia-1b. These two models are
-the closest of any in this analysis to being a controlled experiment.
-These two models have the same embedding size and were initialized with
-identical embeddings before pre-training. Pythia-1.4b has 2x as many
-attention heads (8 vs. 16) and 1.5x as many hidden layers (16 vs. 24).
-Notably, dispute being the larger models, pythia-1.4b scores slightly
-*worse*. This seems to imply that, past a given point, making the model
-larger makes the embedding layer worse, all else being equal. This is
-confirmed in other model suites as well, though the cutoff is not always
-the same embedding/model size.
+Especially of note is the comparison between pythia-1.4b and pythia-1b.
+These two models are the closest of any in this analysis to being a
+controlled experiment. These two models have the same embedding size and
+were initialized with identical embeddings before pre-training.
+Pythia-1.4b has 2x as many attention heads (8 vs. 16) and 1.5x as many
+hidden layers (16 vs. 24). However, dispute being the larger model,
+pythia-1.4b scores slightly *worse*. This seems to imply that, past a
+given point, making the model larger makes the embedding layer worse,
+all else being equal. This pattern of stagnation or degradation after a
+point is confirmed in other model suites as well, though the cutoff is
+not always the same embedding/model size.
 
-2.  > **Random Embedding Weight**s: Re-initialize the embeddings of each
-    > model to a set of random numbers (xavier\_normal). (Note, this is
-    > a shared seed, so every dimension for a given token id will be
-    > identical across models and suites)
+2.  **Random Embedding Weight**s: Re-initialize the embeddings of each
+    model to a set of random numbers (xavier\_normal). (Note, this is a
+    shared seed, so every dimension for a given token id will be
+    identical across models and suites)
 
 At least some of the improvement as embedding size increases comes
 purely from size, as noted by the gentle increase in the random
 baseline. The random baseline is further discussed in a later section.
 
-3.  > **Embeddings Cropped to 128 Dims**: Cut down the embeddings of all
-    > of the models so they only encode tokens as the first 128
-    > dimensions, as a way to measure how much “information per
-    > dimension” a given embedding has. (Note that this is identical to
-    > the original embedding weights for pythia-14m)
+3.  **Embeddings Cropped to 128 Dims**: Cut down the embeddings of all
+    of the models so they only encode tokens as the first 128
+    dimensions, as a way to measure how much “information per dimension”
+    a given embedding has. (Note that this is identical to the original
+    embedding weights for pythia-14m)
 
 The “information per dimension”, as measured by quality of the first 128
-dimensions of each model also seems to peak (if one model size earlier).
-This seems to imply that even at the level of the embedding vectors, the
-Pythia models smaller than pythia-410m don’t learn as much as they
-potentially have the embedding space to.
+dimensions of each model also seems to peak and then stagnate (if one
+model size earlier). This seems to imply that even at the level of the
+embedding vectors, the Pythia models smaller than pythia-410m don’t
+learn as much as they potentially have the embedding space to.
 
 Also of note is that the first 128 dimensions of the embedding space of
 pythia-12b are only marginally better than that of pythia-14m. This
@@ -181,11 +186,11 @@ usefulness for retrieval. Pythia-12b is more capable as a model in part
 because of a larger dimensionality, not because it uses its dimensions
 better (at least, for the embedding layer).
 
-4.  > **Embeddings Padded to 5012 Dims**: Pad the embeddings with random
-    > numbers so each models encodes each token as the model embedding
-    > concatenated with a random vector so they are all the same size
-    > (5012 dimensions). (Note that this is identical to the original
-    > embedding weights for pythia-12b)
+4.  **Embeddings Padded to 5012 Dims**: Pad the embeddings with random
+    numbers so each models encodes each token as the model embedding
+    concatenated with a random vector so they are all the same size
+    (5012 dimensions). (Note that this is identical to the original
+    embedding weights for pythia-12b)
 
 Padding the original weights with random numbers helps up to about 512
 original dimensions. The trained information in the 128/256/512
@@ -203,7 +208,7 @@ The padding in this model is up to 12288 dimensions, the size of the
 embeddings on the largest OPT model, opt-175b. This doesn’t affect the
 embeddings much, though, besides the smallest model.
 
-![](media/image4.png)
+![](media/image1.png)
 
 There are three main things to note here in how this analysis differs
 from the Pythia analysis.
@@ -240,17 +245,18 @@ that went into the graphs in this analysis.
 Considered next to each other, the models form an interesting
 comparison.
 
-### ![](media/image1.png)
+### ![](media/image4.png)
 
 This combined analysis shows how, despite some differences, there is a
 notable pattern that, past a certain point, embedding quality stagnates
 or regresses.
 
-The one exception to this is Cerebras, though given that suite’s score
-similarity to OPT, I hypothesize it would plateau soon if the suite kept
-increasing. This peak/stagnation point occurs at different sizes in
-different model suites. Namely, 1024 dimensions for T5, 2048 dimensions
-for Pythia and Bloom, and 5120 dimensions for OPT.
+The one exception to this is Cerebras, though given the similarity of
+the Cerebras models to OPT models, I hypothesize it would plateau soon
+if the suite kept increasing in size. This peak/stagnation point occurs
+at different sizes in different model suites. Namely, 1024 dimensions
+for T5, 2048 dimensions for Pythia and Bloom, and 5120 dimensions for
+OPT.
 
 Also notable is that the embeddings are very different quality by suite.
 OPT-66b’s embeddings (9216 dimensions) are slightly worse at embedding
@@ -258,7 +264,7 @@ than pythia-70m’s embedding (512 dimensions).
 
 ### Random baseline from the tokenizers:
 
-![](media/image3.png)
+![](media/image2.png)
 
 Of course, model suites vary in many ways besides just model size, and
 one big change with a potentially large impact is tokenizer choice. I
@@ -269,12 +275,12 @@ to rethink the way we consider tokenizing text for LLMs.
 Looking at how the tokenization affects the random baselines is rather
 interesting. For instance, the fact that Bloom notably improves over the
 other models makes sense when you consider that it has a vocab size
-almost 5x that of the next largest tokenizer (larger vocabularies make
-it easier to differentiate between random tokens). Of most interest to
-me, however, is that Cerebras, OPT, and Pythia have almost identical
-vocab sizes, but score somewhat differently. (I ran this for a few other
-seeds, and though the exact lines slightly vary, the graph overall looks
-the same, see the
+almost 5x that of the next largest tokenizer (larger vocabularies
+intuitively make it easier to differentiate between randomly initialized
+tokens). Of most interest to me, however, is that Cerebras, OPT, and
+Pythia have almost identical vocab sizes, but score somewhat
+differently. (I ran this for a few other seeds, and though the exact
+lines slightly vary, the graph overall looks the same, see the
 [<span class="underline">plots</span>](https://github.com/jstephencorey/LMEmbeddingAnalysis/tree/main/plots)
 folder for those graphs).
 
@@ -305,10 +311,10 @@ embedding quality gains, perhaps other methods for improving token
 embeddings ought to be improved, for instance pre-pre-training
 embeddings or different hyperparameter choices like suggested in
 [<span class="underline">μP</span>](https://arxiv.org/abs/2304.06875).
-(Though it will be noted that Cerebras, considered in this analysis, was
-trained with
+(Though Cerebras was trained with
 [<span class="underline">μP</span>](https://arxiv.org/abs/2304.06875)
-hyperparameter choices).
+hyperparameter choices, and this analysis doesn’t show significant
+differences from OPT’s non-μP hyperparameters).
 
 2\. The diminished role of embeddings in larger models may mean that
 beyond a specific size, the embedding layer’s information becomes less
@@ -325,16 +331,17 @@ transforming that information (pun intended) into useful next-word
 predictions or sentence embeddings.
 
 3\. The possibility also exists that this retrieval metric may not
-comprehensively measure the efficacy of the embedding layer in large
-models. Repeating the evaluation using alternative methods remains an
-open task for further research.
+comprehensively or sufficiently measure the quality of the embedding
+layer in large models. Repeating the evaluation using alternative
+methods remains an open task for further research.
 
 ## Conclusions
 
-This analysis shows that the capacity of embedding layers in LLMs
-improves with the size of the model only up to a certain limit. This may
-imply limitations within smaller models and a potential underuse in
-larger ones. Future research should delve into whether embeddings are
+This analysis shows that the capacity of embedding layers in LLMs, as
+measured by their use in a retrieval benchmark, improves with the size
+of the model only up to a certain limit. This may imply limitations
+within smaller models and a potential underuse of embeddings in larger
+models. Future research should delve into whether embeddings are
 insufficiently utilized or if embedding layer importance diminishes as
 model size increases. These insights could influence strategies for
 architecture and pre-training of LLMs.
